@@ -1,0 +1,7 @@
+{
+  "name": "video-special-effects",
+  "version": "1.0.0",
+  "dependencies": [
+    "opencv4"
+  ]
+}
