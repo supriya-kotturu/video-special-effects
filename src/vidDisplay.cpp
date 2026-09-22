@@ -13,7 +13,7 @@
 
 #include "filters.h"
 
-enum class Mode { RGB, GREY };
+enum class Mode { RGB, GRAY };
 
 int saveImage(cv::Mat frame, int currFrameId) {
   const std::string outDir = "data/frames";
@@ -32,7 +32,8 @@ int saveImage(cv::Mat frame, int currFrameId) {
   return (0);
 }
 
-int applyGreyFilter(cv::Mat& src, cv::Mat& dest) {
+// applied a grayscale filter on the dest frame
+int applyGrayscaleFilter(cv::Mat& src, cv::Mat& dest) {
   cv::cvtColor(src, dest, cv::COLOR_BGR2GRAY);
   return (0);
 }
@@ -56,7 +57,9 @@ int main(int argc, char* argv[]) {
                 (int)capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
   printf("Expected size: %d %d\n", refS.width, refS.height);
 
-  cv::namedWindow("Video", 1);  // identifies a window
+  std::string windowName = "Live!!";
+
+  cv::namedWindow(windowName, 1);  // identifies a window
   cv::Mat frame;
   cv::Mat displayFrame;
   int frameCounter = 1;
@@ -75,9 +78,13 @@ int main(int argc, char* argv[]) {
 
     switch (key) {
       case 'g':
-        mode = Mode::GREY;
+        std::cout << "Changing mode to GRAYSCALE" << std::endl;
+        mode = Mode::GRAY;
+        break;
       case 'c':
+        std::cout << "Changing mode to RGB" << std::endl;
         mode = Mode::RGB;
+        break;
       case 's':
         saveImage(displayFrame, frameCounter);
         frameCounter++;
@@ -86,13 +93,13 @@ int main(int argc, char* argv[]) {
         return (0);
     }
 
-    if (mode == Mode::GREY) {
-      applyGreyFilter(frame, displayFrame);
+    if (mode == Mode::GRAY) {
+      applyGrayscaleFilter(frame, displayFrame);
     } else {
       displayFrame = frame;
     }
 
-    cv::imshow("Live!", displayFrame);
+    cv::imshow(windowName, displayFrame);
   }
 
   cv::destroyAllWindows();
