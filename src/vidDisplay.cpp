@@ -13,7 +13,7 @@
 
 #include "filters.h"
 
-enum class Mode { RGB, GRAY };
+enum class Mode { RGB, GRAY, CUSTOM_GRAY, SEPIA, X_RAY, BLUR };
 
 int saveImage(cv::Mat frame, int currFrameId) {
   const std::string outDir = "data/frames";
@@ -29,12 +29,6 @@ int saveImage(cv::Mat frame, int currFrameId) {
     std::cerr << "Failed to save frame." << std::endl;
   }
 
-  return (0);
-}
-
-// applied a grayscale filter on the dest frame
-int applyGrayscaleFilter(cv::Mat& src, cv::Mat& dest) {
-  cv::cvtColor(src, dest, cv::COLOR_BGR2GRAY);
   return (0);
 }
 
@@ -64,6 +58,7 @@ int main(int argc, char* argv[]) {
   cv::Mat displayFrame;
   int frameCounter = 1;
   Mode mode = Mode::RGB;
+  bool vignette = false;
 
   while (true) {
     *capdev >> frame;  // get a new frame from the camera, treat as a stream
@@ -81,22 +76,62 @@ int main(int argc, char* argv[]) {
         std::cout << "Changing mode to GRAYSCALE" << std::endl;
         mode = Mode::GRAY;
         break;
+      case 'h':
+        std::cout << "Changing mode to CUSTOM_GRAYSCALE" << std::endl;
+        mode = Mode::CUSTOM_GRAY;
+        break;
+      case 'x':
+        std::cout << "Changing mode to X_RAY" << std::endl;
+        mode = Mode::X_RAY;
+        break;
       case 'c':
         std::cout << "Changing mode to RGB" << std::endl;
         mode = Mode::RGB;
         break;
-      case 's':
-        saveImage(displayFrame, frameCounter);
-        frameCounter++;
+      case 'p':
+        std::cout << "Changing mode to Sepia" << std::endl;
+        mode = Mode::SEPIA;
+        break;
+      case 'b':
+        std::cout << "Changing mode to Blur" << std::endl;
+        mode = Mode::BLUR;
+        break;
+      case 'v':
+        std::cout << "Swithing vignette" << std::endl;
+        vignette = !vignette;
         break;
       case 'q':
         return (0);
     }
 
-    if (mode == Mode::GRAY) {
-      applyGrayscaleFilter(frame, displayFrame);
-    } else {
-      displayFrame = frame;
+    switch (mode) {
+      case Mode::GRAY:
+        applyGrayscaleFilter(frame, displayFrame);
+        break;
+      case Mode::CUSTOM_GRAY:
+        applyCustomGrayscaleFilter(frame, displayFrame);
+        break;
+      case Mode::X_RAY:
+        applyXRayFilter(frame, displayFrame);
+        break;
+      case Mode::SEPIA:
+        applySepiaFilter(frame, displayFrame);
+        break;
+      case Mode::BLUR:
+        applyBlur(frame, displayFrame);
+        break;
+      default:
+        displayFrame = frame;
+        break;
+    }
+
+    if (vignette) {
+      applyVignette(displayFrame, displayFrame);
+    }
+
+    if (key == 's') {
+      saveImage(displayFrame, frameCounter);
+      frameCounter++;
     }
 
     cv::imshow(windowName, displayFrame);

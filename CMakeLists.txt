@@ -36,12 +36,15 @@ target_link_libraries(vid PRIVATE filters)
 add_executable(img src/imgDisplay.cpp)
 target_link_libraries(img PRIVATE filters)
 
+add_executable(timeBlur src/timeBlur.cpp)
+target_link_libraries(timeBlur PRIVATE filters)
+
 # Windows has no rpath; the exe's own folder is checked before PATH, so copy
 # the runtime DLL there on every build instead of relying on PATH/session state
 if(WIN32)
     set(OPENCV_RUNTIME_DLL
         "${OpenCV_DIR}/x64/vc16/bin/opencv_world${OpenCV_VERSION_MAJOR}${OpenCV_VERSION_MINOR}${OpenCV_VERSION_PATCH}$<$<CONFIG:Debug>:d>.dll")
-    foreach(tgt main vid img)
+    foreach(tgt main vid img timeBlur)
         add_custom_command(TARGET ${tgt} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${OPENCV_RUNTIME_DLL}" "$<TARGET_FILE_DIR:${tgt}>"

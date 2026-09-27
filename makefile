@@ -14,7 +14,7 @@ BINDIR = out
 .PHONY: all run clean
 
 # each program has its own main(); filters.o is shared
-all: $(BINDIR)/main $(BINDIR)/vid $(BINDIR)/img
+all: $(BINDIR)/main $(BINDIR)/vid $(BINDIR)/img $(BINDIR)/timeBlur
 
 $(BINDIR)/main: $(OBJDIR)/main.o | $(BINDIR)
 	$(CXX) $^ -o $@ $(LDLIBS)
@@ -23,6 +23,9 @@ $(BINDIR)/vid: $(OBJDIR)/vidDisplay.o $(OBJDIR)/filters.o | $(BINDIR)
 	$(CXX) $^ -o $@ $(LDLIBS)
 
 $(BINDIR)/img: $(OBJDIR)/imgDisplay.o $(OBJDIR)/filters.o | $(BINDIR)
+	$(CXX) $^ -o $@ $(LDLIBS)
+
+$(BINDIR)/timeBlur: $(OBJDIR)/timeBlur.o $(OBJDIR)/filters.o | $(BINDIR)
 	$(CXX) $^ -o $@ $(LDLIBS)
 
 # rebuild objects when a header changes
@@ -39,4 +42,4 @@ run: $(BINDIR)/$(P)
 	./$(BINDIR)/$(P) $(ARGS)
 
 clean:
-	rm -rf $(OBJDIR) $(BINDIR)/main $(BINDIR)/vid $(BINDIR)/img
+	rm -rf $(OBJDIR) $(BINDIR)/main $(BINDIR)/vid $(BINDIR)/img $(BINDIR)/timeBlur

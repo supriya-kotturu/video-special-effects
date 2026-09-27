@@ -2,12 +2,15 @@
   Author:  Sai Supriya Kotturu
   Date:    2026-09-21
   Purpose: Task 1 - read an image from a file, display it in a window, and loop
-           until the user presses 'q'.
+          until the user presses 'q'.
 */
+
+#include <filters.h>
 
 #include <iostream>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -27,7 +30,11 @@ int main(int argc, char* argv[]) {
 
   cv::namedWindow(windowName, cv::WINDOW_NORMAL);
   cv::resizeWindow(windowName, 600, 800);
-  cv::imshow(windowName, image);
+  // cv::imshow(windowName, image);
+
+  cv::Mat blurred;
+  blur5x5_1(image, blurred);
+  cv::imshow(windowName, blurred);
 
   while (true) {
     char key = (char)cv::waitKey(0);

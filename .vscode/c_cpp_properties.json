@@ -3,7 +3,8 @@
     {
       "name": "windows-msvc-x64",
       "includePath": [
-        "${workspaceFolder}/include"
+        "${workspaceFolder}/include",
+        "C:/opencv/build/include"
       ],
       "cStandard": "${default}",
       "cppStandard": "c++17",

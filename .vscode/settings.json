@@ -2,5 +2,12 @@
   "cmake.configurePreset": "windows-msvc",
   "cmake.buildPreset": "windows-msvc",
   "cmake.sourceDirectory": "${workspaceFolder}",
-  "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, BreakBeforeBraces: Attach }"
+  "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, BreakBeforeBraces: Attach }",
+  "cSpell.words": [
+    "imshow",
+    "imwrite",
+    "Kotturu",
+    "Sobel",
+    "Supriya"
+  ]
 }
