@@ -11,6 +11,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include "faceDetect.h"
 #include "filters.h"
 
 // which filter the main loop applies; set by the last mode key pressed
@@ -57,7 +58,7 @@ int saveImage(cv::Mat frame, int currFrameId) {
     c = color, g = OpenCV grayscale, h = custom grayscale, x = X-ray,
     p = sepia, b = blur, 1 = Sobel X, 2 = Sobel Y, 3 = gradient magnitude,
     l = blur + quantize (10 levels),
-    v = toggle vignette (stacks on any mode),
+    v = toggle vignette, f = toggle face boxes (both stack on any mode),
     s = save current frame, q = quit
   argc/argv are unused. Returns 0 on normal exit, -1 if the camera can't open.
 */
@@ -92,6 +93,9 @@ int main(int argc, char* argv[]) {
   int frameCounter = 1;
   Mode mode = Mode::RGB;
   bool vignette = false;
+  bool showFaces = false;
+  cv::Mat grey;                  // detector input
+  std::vector<cv::Rect> faces;   // detector output, reused each frame
 
   while (true) {
     *capdev >> frame;  // get a new frame from the camera, treat as a stream
@@ -150,6 +154,10 @@ int main(int argc, char* argv[]) {
         std::cout << "Toggling vignette" << std::endl;
         vignette = !vignette;
         break;
+      case 'f':
+        std::cout << "Toggling face detection" << std::endl;
+        showFaces = !showFaces;
+        break;
       case 'q':
         return (0);
     }
@@ -193,6 +201,14 @@ int main(int argc, char* argv[]) {
       default:
         displayFrame = frame;
         break;
+    }
+
+    // detect on the unfiltered frame (the Haar detector expects a natural
+    // greyscale image, not e.g. Sobel output), draw on whatever is displayed
+    if (showFaces) {
+      cv::cvtColor(frame, grey, cv::COLOR_BGR2GRAY);
+      detectFaces(grey, faces);
+      drawBoxes(displayFrame, faces);
     }
 
     // vignette is applied last so it layers over any mode, and before saving

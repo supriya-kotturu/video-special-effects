@@ -23,8 +23,9 @@ endif()
 include_directories(${OpenCV_INCLUDE_DIRS} include)
 
 # filters.o is shared between vid/img in the makefile; a static lib does the
-# same job here without recompiling filters.cpp per target
-add_library(filters STATIC src/filters.cpp)
+# same job here without recompiling filters.cpp per target. faceDetect.cpp
+# (course-provided) rides along so every program can use face detection.
+add_library(filters STATIC src/filters.cpp src/faceDetect.cpp)
 target_link_libraries(filters PUBLIC ${OpenCV_LIBS})
 
 add_executable(main src/main.cpp)
@@ -40,8 +41,11 @@ add_executable(timeBlur src/timeBlur.cpp)
 target_link_libraries(timeBlur PRIVATE filters)
 
 # Windows has no rpath; the exe's own folder is checked before PATH, so copy
-# the runtime DLL there on every build instead of relying on PATH/session state
-if(WIN32)
+# the runtime DLL there on every build instead of relying on PATH/session state.
+# Only needed for a prebuilt opencv_world install: the vcpkg toolchain already
+# copies each exe's DLL dependencies next to it (VCPKG_APPLOCAL_DEPS).
+# OpenCV 4 is required: OpenCV 5 dropped CascadeClassifier (task 10).
+if(WIN32 AND NOT VCPKG_TOOLCHAIN)
     set(OPENCV_RUNTIME_DLL
         "${OpenCV_DIR}/x64/vc16/bin/opencv_world${OpenCV_VERSION_MAJOR}${OpenCV_VERSION_MINOR}${OpenCV_VERSION_PATCH}$<$<CONFIG:Debug>:d>.dll")
     foreach(tgt main vid img timeBlur)

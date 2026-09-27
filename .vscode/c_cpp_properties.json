@@ -4,7 +4,7 @@
       "name": "windows-msvc-x64",
       "includePath": [
         "${workspaceFolder}/include",
-        "C:/opencv/build/include"
+        "C:/Users/supri/vcpkg/installed/x64-windows/include/opencv4"
       ],
       "cStandard": "${default}",
       "cppStandard": "c++17",

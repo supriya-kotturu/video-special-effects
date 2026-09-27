@@ -19,7 +19,7 @@ all: $(BINDIR)/main $(BINDIR)/vid $(BINDIR)/img $(BINDIR)/timeBlur
 $(BINDIR)/main: $(OBJDIR)/main.o | $(BINDIR)
 	$(CXX) $^ -o $@ $(LDLIBS)
 
-$(BINDIR)/vid: $(OBJDIR)/vidDisplay.o $(OBJDIR)/filters.o | $(BINDIR)
+$(BINDIR)/vid: $(OBJDIR)/vidDisplay.o $(OBJDIR)/filters.o $(OBJDIR)/faceDetect.o | $(BINDIR)
 	$(CXX) $^ -o $@ $(LDLIBS)
 
 $(BINDIR)/img: $(OBJDIR)/imgDisplay.o $(OBJDIR)/filters.o | $(BINDIR)

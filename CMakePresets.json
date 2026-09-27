@@ -3,11 +3,12 @@
   "configurePresets": [
     {
       "name": "windows-msvc",
-      "displayName": "Windows x64 (MSVC + local OpenCV)",
+      "displayName": "Windows x64 (MSVC + vcpkg OpenCV 4)",
       "generator": "Visual Studio 18 2026",
       "binaryDir": "${sourceDir}/build",
+      "toolchainFile": "C:/Users/supri/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "OpenCV_DIR": "C:/opencv/build"
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
       },
       "architecture": {
         "value": "x64",
