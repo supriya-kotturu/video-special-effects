@@ -6,6 +6,10 @@
   Example of how to time an image processing task.
 
   Program takes a path to an image on the command line
+
+  Modified by Sai Supriya Kotturu, 2026-09-26: replaced POSIX gettimeofday
+  with std::chrono so it builds on Windows/MSVC, and uses filters.h for the
+  blur5x5_1 / blur5x5_2 prototypes.
 */
 
 #include <filters.h>

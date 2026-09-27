@@ -32,9 +32,21 @@ int main(int argc, char* argv[]) {
   cv::resizeWindow(windowName, 600, 800);
   // cv::imshow(windowName, image);
 
-  cv::Mat blurred;
-  blur5x5_1(image, blurred);
-  cv::imshow(windowName, blurred);
+  // cv::Mat blurred;
+  // blur5x5_1(image, blurred);
+  // cv::imshow(windowName, blurred);
+
+  cv::Mat sobelX;
+  cv::Mat sobelXDisplay;
+  sobelX3x3(image, sobelX);
+  cv::convertScaleAbs(sobelX, sobelXDisplay);
+  cv::imshow("X", sobelXDisplay);
+
+  cv::Mat sobelY;
+  cv::Mat sobelYDisplay;
+  sobelY3x3(image, sobelY);
+  cv::convertScaleAbs(sobelY, sobelYDisplay);
+  cv::imshow("Y", sobelYDisplay);
 
   while (true) {
     char key = (char)cv::waitKey(0);
