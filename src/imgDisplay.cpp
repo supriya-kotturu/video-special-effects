@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
   cv::namedWindow(windowName, cv::WINDOW_NORMAL);
   cv::resizeWindow(windowName, 600, 800);
-  // cv::imshow(windowName, image);
+  cv::imshow(windowName, image);
 
   // cv::Mat blurred;
   // blur5x5_1(image, blurred);
