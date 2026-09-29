@@ -12,6 +12,14 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+/*
+  Loads the image named on the command line and shows its Sobel X and Sobel Y
+  outputs (absolute value) in two windows; used to check the task 7 filters on
+  a still image. Blocks until the user presses 'q'.
+
+  argv[1]: path to the image file
+  returns: 0 on quit, -1 on missing argument, 1 if the image can't be read
+*/
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <path_to_image>" << std::endl;
