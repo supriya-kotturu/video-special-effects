@@ -56,7 +56,7 @@ target_link_libraries(da2example PRIVATE ${OpenCV_LIBS} onnxruntime)
 add_executable(da2video src/da2-video.cpp)
 target_link_libraries(da2video PRIVATE ${OpenCV_LIBS} onnxruntime)
 
-# vid uses DA2 for the depth and rain modes
+# vid uses DA2 for the depth and fog modes
 target_link_libraries(vid PRIVATE onnxruntime)
 
 # Windows ships an older onnxruntime.dll in System32; the copy next to the exe
