@@ -7,10 +7,12 @@
 
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#include "DA2Network.hpp"
 #include "faceDetect.h"
 #include "filters.h"
 
@@ -25,7 +27,14 @@ enum class Mode {
   SOBEL_X,
   SOBEL_Y,
   MAGNITUDE,
-  BLUR_QUANTIZE
+  BLUR_QUANTIZE,
+  DEPTH,
+  RAIN,
+  FOG,
+  NEON,
+  CARTOON,
+  MEDIAN,
+  DISCO
 };
 
 /*
@@ -57,7 +66,11 @@ int saveImage(cv::Mat frame, int currFrameId) {
   Opens the default camera and shows the live stream. Keys:
     c = color, g = OpenCV grayscale, h = custom grayscale, x = X-ray,
     p = sepia, b = blur, 1 = Sobel X, 2 = Sobel Y, 3 = gradient magnitude,
-    l = blur + quantize (10 levels),
+    l = blur + quantize (10 levels), d = depth map (DA2),
+    o = depth fog, r = Seattle rain (clear over faces),
+    n = neon duotone, t = cartoonize (flat colors + black outlines),
+    m = median filter (5x5), k = disco lights (strobes at 2.5 Hz; face stays
+    natural, press k again to swap face/background),
     v = toggle vignette, f = toggle face boxes (both stack on any mode),
     s = save current frame, q = quit
   argc/argv are unused. Returns 0 on normal exit, -1 if the camera can't open.
@@ -94,8 +107,21 @@ int main(int argc, char* argv[]) {
   Mode mode = Mode::RGB;
   bool vignette = false;
   bool showFaces = false;
-  cv::Mat grey;                  // detector input
-  std::vector<cv::Rect> faces;   // detector output, reused each frame
+  bool discoOnFace = false;
+  cv::Mat grey;                 // detector input
+  std::vector<cv::Rect> faces;  // detector output, reused each frame
+
+  // Depth Anything V2, created on first use so the other modes don't pay the
+  // model load time. The scale must stay constant: run_network keeps a static
+  // buffer sized from its first call.
+  std::unique_ptr<DA2Network> daNet;
+  const float DEPTH_SCALE = 0.5f;  // 640x480 -> 320x240 network input
+  // DA2 is slow on the CPU, so refresh depth every few frames and reuse it;
+  // people move little between refreshes
+  const int DEPTH_EVERY = 3;
+  cv::Mat depth;  // CV_8UC1, 255 = nearest
+  cv::Mat depthVis;
+  int depthTick = 0;
 
   while (true) {
     *capdev >> frame;  // get a new frame from the camera, treat as a stream
@@ -150,6 +176,41 @@ int main(int argc, char* argv[]) {
         std::cout << "Changing mode to BLUR_QUANTIZE" << std::endl;
         mode = Mode::BLUR_QUANTIZE;
         break;
+      case 'd':
+        std::cout << "Changing mode to DEPTH" << std::endl;
+        mode = Mode::DEPTH;
+        break;
+      case 'r':
+        std::cout << "Changing mode to RAIN" << std::endl;
+        mode = Mode::RAIN;
+        break;
+      case 'o':
+        std::cout << "Changing mode to FOG" << std::endl;
+        mode = Mode::FOG;
+        break;
+      case 'n':
+        std::cout << "Changing mode to NEON" << std::endl;
+        mode = Mode::NEON;
+        break;
+      case 't':
+        std::cout << "Changing mode to CARTOON" << std::endl;
+        mode = Mode::CARTOON;
+        break;
+      case 'm':
+        std::cout << "Changing mode to MEDIAN" << std::endl;
+        mode = Mode::MEDIAN;
+        break;
+      // first press enters disco; pressing again swaps which area flashes
+      case 'k':
+        if (mode == Mode::DISCO) {
+          discoOnFace = !discoOnFace;
+          std::cout << "Disco on " << (discoOnFace ? "face" : "background")
+                    << std::endl;
+        } else {
+          std::cout << "Changing mode to DISCO" << std::endl;
+          mode = Mode::DISCO;
+        }
+        break;
       case 'v':
         std::cout << "Toggling vignette" << std::endl;
         vignette = !vignette;
@@ -160,6 +221,20 @@ int main(int argc, char* argv[]) {
         break;
       case 'q':
         return (0);
+    }
+
+    // depth modes: load the network once, refresh depth every DEPTH_EVERY
+    // frames (and immediately if there is no depth yet)
+    if (mode == Mode::DEPTH || mode == Mode::FOG) {
+      if (!daNet) {
+        std::cout << "Loading Depth Anything V2..." << std::endl;
+        daNet = std::make_unique<DA2Network>("data/model_fp16.onnx");
+      }
+      if (depth.empty() || depthTick % DEPTH_EVERY == 0) {
+        daNet->set_input(frame, DEPTH_SCALE);
+        daNet->run_network(depth, frame.size());
+      }
+      depthTick++;
     }
 
     // apply the active filter to this frame
@@ -197,6 +272,36 @@ int main(int argc, char* argv[]) {
         break;
       case Mode::BLUR_QUANTIZE:
         blurQuantize(frame, displayFrame, 10);
+        break;
+      // colormap makes relative depth readable: bright/yellow = near
+      case Mode::DEPTH:
+        cv::applyColorMap(depth, displayFrame, cv::COLORMAP_INFERNO);
+        break;
+      // rain fades out over detected faces
+      case Mode::RAIN:
+        cv::cvtColor(frame, grey, cv::COLOR_BGR2GRAY);
+        detectFaces(grey, faces);
+        rainEffect(frame, displayFrame, faces);
+        break;
+      case Mode::FOG:
+        fogEffect(frame, depth, displayFrame);
+        break;
+      case Mode::NEON:
+        neonCartoon(frame, displayFrame);
+        break;
+      case Mode::CARTOON:
+        cartoonize(frame, displayFrame);
+        break;
+      case Mode::MEDIAN:
+        medianFilter(frame, displayFrame);
+        break;
+      // wall-clock time, so the animation speed doesn't depend on the fps
+      case Mode::DISCO:
+        cv::cvtColor(frame, grey, cv::COLOR_BGR2GRAY);
+        detectFaces(grey, faces);
+        discoEffect(frame, displayFrame,
+                    cv::getTickCount() / cv::getTickFrequency(), faces,
+                    discoOnFace);
         break;
       default:
         displayFrame = frame;

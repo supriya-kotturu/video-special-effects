@@ -10,6 +10,7 @@
 #define FILTERS_H
 
 #include <opencv2/core.hpp>
+#include <vector>
 
 /**
  * Converts a BGR frame to grayscale using OpenCV's standard luminance weights
@@ -153,5 +154,112 @@ int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dest);
  * @return 0 on success
  */
 int blurQuantize(cv::Mat& src, cv::Mat& dest, int levels = 10);
+
+/**
+ * "Seattle rain" (task 12 effect; uses face detection). Draws animated,
+ * semi-transparent rain streaks over the frame: streaks are added to the
+ * pixel values rather than painted over them, so the scene shows through.
+ * Around each detected face the rain fades out through a soft oval (smoothstep
+ * falloff, averaged over frames so it doesn't wobble), so it never rains on
+ * the user's face. Drops have a pseudo-depth: nearer ones fall faster and are
+ * longer and brighter.
+ *
+ * Keeps state between calls (drop positions, smoothed mask), so call it once
+ * per video frame.
+ *
+ * @param src    input frame, CV_8UC3 (BGR); not modified
+ * @param dest   output frame, CV_8UC3 (BGR)
+ * @param faces  face boxes from detectFaces (may be empty: rain everywhere)
+ * @return 0 on success
+ */
+int rainEffect(cv::Mat& src, cv::Mat& dest,
+               const std::vector<cv::Rect>& faces = {});
+
+/**
+ * Depth fog (task 11 creative depth filter). Each pixel is blended toward a
+ * light grey fog color by f = 1 - exp(-density * distance), where distance is
+ * 1 - depth/255 (DA2 depth is closeness). This is the Beer-Lambert falloff
+ * real fog follows: near objects stay clear, far ones fade into haze. Depth is
+ * averaged over time to stop the fog pulsing with DA2's per-frame
+ * normalization, so call it once per video frame.
+ *
+ * @param src      input frame, CV_8UC3 (BGR); not modified
+ * @param depth    depth map, CV_8UC1, same size as src; 255 = nearest
+ * @param dest     output frame, CV_8UC3 (BGR)
+ * @param density  fog thickness; ~2-3 gives a clear foreground and a hazy
+ *                 background
+ * @return 0 on success
+ */
+int fogEffect(cv::Mat& src, cv::Mat& depth, cv::Mat& dest,
+              float density = 2.5f);
+
+/**
+ * Neon duotone (task 12 area-based effect). Builds a detail map from
+ * sobelX3x3/sobelY3x3/magnitude, lightly blurred so textured regions (faces,
+ * hands, clothing) score high and smooth walls score low. Detailed regions
+ * are shaded in a dark-to-light green duotone by brightness, with strong edges
+ * pushed to bright green for an outline rim; smooth regions use a magenta to
+ * pale-yellow duotone. The two palettes blend softly at their border.
+ *
+ * @param src   input frame, CV_8UC3 (BGR); not modified
+ * @param dest  output frame, CV_8UC3 (BGR)
+ * @return 0 on success
+ */
+int neonCartoon(cv::Mat& src, cv::Mat& dest);
+
+/**
+ * Cartoonize (task 12 area-based effect): flat color regions with black ink
+ * outlines. Colors come from blurQuantize; outlines are pixels whose gradient
+ * magnitude (strongest of the three channels) exceeds magThreshold. Edges are
+ * measured on a blurred copy so webcam noise doesn't turn into black
+ * speckles.
+ *
+ * @param src           input frame, CV_8UC3 (BGR); not modified
+ * @param dest          output frame, CV_8UC3 (BGR)
+ * @param levels        quantization levels per channel, 1..255
+ * @param magThreshold  gradient magnitude (0..255) above which a pixel is
+ *                      drawn as an outline; lower = more lines
+ * @return 0 on success
+ */
+int cartoonize(cv::Mat& src, cv::Mat& dest, int levels = 10,
+               int magThreshold = 20);
+
+/**
+ * Median filter (extension). Each output channel value is the
+ * median of that channel over a ksize x ksize window. Unlike a Gaussian blur
+ * it removes speckle noise while keeping edges sharp, and at larger sizes it
+ * gives a flat, painted look. The outer ksize/2 rows/cols are copied from src.
+ *
+ * @param src    input frame, CV_8UC3 (BGR); not modified
+ * @param dest   output frame, CV_8UC3 (BGR)
+ * @param ksize  window size, odd and >= 3 (5 is a good default)
+ * @return 0 on success
+ */
+int medianFilter(cv::Mat& src, cv::Mat& dest, int ksize = 5);
+
+/**
+ * Disco lights (extension; uses face detection). Keeps each pixel's
+ * brightness but recolors it with saturated neon hues arranged in diagonal
+ * rainbow bands that sweep across the frame, plus a strobe that alternates
+ * full and dim brightness. Detected faces stay in natural color while the
+ * background flashes, or the reverse with discoOnFace, blended through the
+ * same soft oval the rain effect uses. Animation is driven by t (seconds),
+ * not a frame count, so the speed is the same whatever the camera's frame
+ * rate. Keeps a smoothed face mask between calls, so call it once per frame.
+ *
+ * @param src          input frame, CV_8UC3 (BGR); not modified
+ * @param dest         output frame, CV_8UC3 (BGR)
+ * @param t            current time in seconds (any monotonic clock)
+ * @param faces        face boxes from detectFaces (may be empty)
+ * @param discoOnFace  false: face natural, background disco; true: reverse
+ *                     (with no faces found, the whole frame stays natural)
+ * @param strobeHz     strobe flashes per second; 0 disables. Keep below 3:
+ *                     faster full-frame flashing is a photosensitive-seizure
+ *                     risk (WCAG 2.3.1)
+ * @return 0 on success
+ */
+int discoEffect(cv::Mat& src, cv::Mat& dest, double t,
+                const std::vector<cv::Rect>& faces = {},
+                bool discoOnFace = false, double strobeHz = 2.5);
 
 #endif  // FILTERS_H

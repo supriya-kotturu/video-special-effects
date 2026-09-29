@@ -40,6 +40,36 @@ target_link_libraries(img PRIVATE filters)
 add_executable(timeBlur src/timeBlur.cpp)
 target_link_libraries(timeBlur PRIVATE filters)
 
+# ONNX Runtime (task 11, Depth Anything V2): Microsoft's prebuilt release zip,
+# extracted outside the repo. Override with -DONNXRUNTIME_ROOT=... if moved.
+set(ONNXRUNTIME_ROOT "C:/onnxruntime/onnxruntime-win-x64-1.30.0"
+    CACHE PATH "Extracted ONNX Runtime release")
+add_library(onnxruntime SHARED IMPORTED)
+set_target_properties(onnxruntime PROPERTIES
+    IMPORTED_IMPLIB "${ONNXRUNTIME_ROOT}/lib/onnxruntime.lib"
+    IMPORTED_LOCATION "${ONNXRUNTIME_ROOT}/lib/onnxruntime.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${ONNXRUNTIME_ROOT}/include")
+
+add_executable(da2example src/da2-example.cpp)
+target_link_libraries(da2example PRIVATE ${OpenCV_LIBS} onnxruntime)
+
+add_executable(da2video src/da2-video.cpp)
+target_link_libraries(da2video PRIVATE ${OpenCV_LIBS} onnxruntime)
+
+# vid uses DA2 for the depth and rain modes
+target_link_libraries(vid PRIVATE onnxruntime)
+
+# Windows ships an older onnxruntime.dll in System32; the copy next to the exe
+# is found first, so the version we compiled against is the one that loads
+foreach(tgt da2example da2video vid)
+    add_custom_command(TARGET ${tgt} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ONNXRUNTIME_ROOT}/lib/onnxruntime.dll"
+            "${ONNXRUNTIME_ROOT}/lib/onnxruntime_providers_shared.dll"
+            "$<TARGET_FILE_DIR:${tgt}>"
+        COMMENT "Copying ONNX Runtime DLLs next to ${tgt}")
+endforeach()
+
 # Windows has no rpath; the exe's own folder is checked before PATH, so copy
 # the runtime DLL there on every build instead of relying on PATH/session state.
 # Only needed for a prebuilt opencv_world install: the vcpkg toolchain already

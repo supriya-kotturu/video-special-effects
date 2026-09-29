@@ -4,7 +4,8 @@
       "name": "windows-msvc-x64",
       "includePath": [
         "${workspaceFolder}/include",
-        "C:/Users/supri/vcpkg/installed/x64-windows/include/opencv4"
+        "C:/Users/supri/vcpkg/installed/x64-windows/include/opencv4",
+        "C:/onnxruntime/onnxruntime-win-x64-1.30.0/include"
       ],
       "cStandard": "${default}",
       "cppStandard": "c++17",
