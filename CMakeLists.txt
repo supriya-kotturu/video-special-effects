@@ -85,3 +85,7 @@ if(WIN32 AND NOT VCPKG_TOOLCHAIN)
             COMMENT "Copying OpenCV runtime DLL next to ${tgt}")
     endforeach()
 endif()
+
+# texture comparison by gradient-magnitude energy
+add_executable(textureEnergy src/textureEnergy.cpp)
+target_link_libraries(textureEnergy PRIVATE filters)
